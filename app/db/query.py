@@ -161,6 +161,11 @@ def get_user_by_id(db: Session, user_id: int) -> User | None:
     return db.query(User).filter(User.id == user_id).first()
 
 
+def list_users(db: Session) -> list[User]:
+    """Get all users"""
+    return db.query(User).all()
+
+
 def update_user_push_token(db: Session, user_id: int, expo_push_token: str) -> None:
     """Update user's expo push token"""
 

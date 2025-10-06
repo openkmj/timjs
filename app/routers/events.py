@@ -4,6 +4,7 @@ from app.db import query as event_db
 from app.middlewares.auth import AuthContext
 from app.middlewares.db import DBContext
 from app.schemas import EventCreate, EventResponse, EventUpdate
+from app.utils.push_notification import send_push_notification
 
 router = APIRouter()
 
@@ -28,7 +29,7 @@ async def get_events(db: DBContext, _: AuthContext):
 
 
 @router.post("", response_model=EventResponse)
-async def create_event(db: DBContext, _: AuthContext, event: EventCreate):
+async def create_event(db: DBContext, user: AuthContext, event: EventCreate):
     """
     Create a new event
     """
@@ -40,6 +41,21 @@ async def create_event(db: DBContext, _: AuthContext, event: EventCreate):
         location=event.location,
         tags=event.tags,
     )
+
+    # Send push notifications to all users except the creator
+    users = event_db.list_users(db)
+    tokens = [
+        u.expo_push_token
+        for u in users
+        if u.expo_push_token and u.id != user.id
+    ]
+    send_push_notification(
+        tokens=tokens,
+        title=new_event.title,
+        body=f"{user.name}님이 {new_event.title} 이벤트를 추가했습니다.",
+        data={"event_id": new_event.id, "type": "new_event"},
+    )
+
     return EventResponse(
         id=new_event.id,
         title=new_event.title,

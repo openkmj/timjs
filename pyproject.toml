@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.40.45",
+    "exponent-server-sdk>=2.2.0",
     "fastapi>=0.118.0",
     "nanoid>=2.0.0",
     "pydantic-settings>=2.11.0",

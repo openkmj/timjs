@@ -18,6 +18,7 @@ from app.schemas import (
     PresignedUploadResponse,
     UserSummary,
 )
+from app.utils.push_notification import send_push_notification
 from app.utils.s3 import MediaType, s3_client
 
 router = APIRouter()
@@ -78,6 +79,20 @@ async def create_media(db: DBContext, user: AuthContext, request: ConfirmUploadR
         file_size=request.file_size,
         created_at=datetime.now(),
         file_metadata=json.dumps(request.file_metadata) if request.file_metadata else None,
+    )
+
+    # Send push notifications to all users except the uploader
+    users = query.list_users(db)
+    tokens = [
+        u.expo_push_token
+        for u in users
+        if u.expo_push_token and u.id != user.id
+    ]
+    send_push_notification(
+        tokens=tokens,
+        title="새로운 사진",
+        body=f"{user.name}님이 사진을 추가했습니다",
+        data={"media_id": media.id, "event_id": media.event_id, "type": "new_media"},
     )
 
     return MediaResponse(
