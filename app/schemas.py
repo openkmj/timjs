@@ -43,18 +43,6 @@ class UserSummary(BaseModel):
 class MediaListItem(BaseModel):
     id: int
     event_id: int
-    url: str
-    thumb_url: str
-    file_type: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class MediaResponse(BaseModel):
-    id: int
-    event_id: int
     user: UserSummary
     url: str
     thumb_url: str
@@ -90,13 +78,17 @@ class PresignedUploadResponse(BaseModel):
     thumbnail: PresignedUrlData
 
 
-class ConfirmUploadRequest(BaseModel):
+class MediaUploadItem(BaseModel):
     url: str
     thumb_url: str
     file_type: str
     event_id: int
     file_size: int
     file_metadata: dict | None = None
+
+
+class ConfirmUploadListRequest(BaseModel):
+    media_list: list[MediaUploadItem]
 
 
 # User schemas

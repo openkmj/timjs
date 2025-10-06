@@ -21,7 +21,9 @@ def send_push_notification(
         return
 
     # Filter out invalid tokens
-    valid_tokens = [token for token in tokens if PushClient.is_exponent_push_token(token)]
+    valid_tokens = [
+        token for token in tokens if PushClient.is_exponent_push_token(token)
+    ]
 
     if not valid_tokens:
         return

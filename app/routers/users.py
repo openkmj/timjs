@@ -20,7 +20,7 @@ async def get_me(_: DBContext, user: AuthContext):
     return user
 
 
-@router.put("/push-token")
+@router.put("/push-token", status_code=204)
 async def update_push_token(
     db: DBContext, user: AuthContext, request: UpdatePushTokenRequest
 ):
@@ -28,4 +28,3 @@ async def update_push_token(
     Update user's expo push token
     """
     query.update_user_push_token(db, user.id, request.expo_push_token)
-    return {"message": "Push token updated successfully"}

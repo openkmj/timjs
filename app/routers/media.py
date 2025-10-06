@@ -11,9 +11,8 @@ from app.db import query
 from app.middlewares.auth import AuthContext
 from app.middlewares.db import DBContext
 from app.schemas import (
-    ConfirmUploadRequest,
+    ConfirmUploadListRequest,
     MediaFeedResponse,
-    MediaResponse,
     PresignedUploadRequest,
     PresignedUploadResponse,
     UserSummary,
@@ -64,47 +63,47 @@ async def get_presigned_upload_url(
     )
 
 
-@router.post("", response_model=MediaResponse)
-async def create_media(db: DBContext, user: AuthContext, request: ConfirmUploadRequest):
+@router.post("", status_code=204)
+async def create_media(
+    db: DBContext, user: AuthContext, request: ConfirmUploadListRequest
+):
     """
-    Confirm upload and create media record
+    Confirm upload and create multiple media records
     """
-    media = query.create_media(
-        db=db,
-        user_id=user.id,
-        event_id=request.event_id,
-        url=request.url,
-        thumb_url=request.thumb_url,
-        file_type=request.file_type,
-        file_size=request.file_size,
-        created_at=datetime.now(),
-        file_metadata=json.dumps(request.file_metadata) if request.file_metadata else None,
+    now = datetime.now()
+    media_data_list = [
+        {
+            "event_id": media.event_id,
+            "url": media.url,
+            "thumb_url": media.thumb_url,
+            "file_type": media.file_type,
+            "file_size": media.file_size,
+            "file_metadata": json.dumps(media.file_metadata)
+            if media.file_metadata
+            else None,
+            "created_at": now,
+        }
+        for media in request.media_list
+    ]
+
+    query.create_media_bulk(db=db, user_id=user.id, media_data_list=media_data_list)
+
+    # Send push notification once for all uploads
+    users = query.list_users(db)
+    tokens = [u.expo_push_token for u in users if u.expo_push_token and u.id != user.id]
+
+    count = len(media_data_list)
+    body = (
+        f"{user.name}님이 사진 {count}개를 추가했습니다"
+        if count > 1
+        else f"{user.name}님이 사진을 추가했습니다"
     )
 
-    # Send push notifications to all users except the uploader
-    users = query.list_users(db)
-    tokens = [
-        u.expo_push_token
-        for u in users
-        if u.expo_push_token and u.id != user.id
-    ]
     send_push_notification(
         tokens=tokens,
         title="새로운 사진",
-        body=f"{user.name}님이 사진을 추가했습니다",
-        data={"media_id": media.id, "event_id": media.event_id, "type": "new_media"},
-    )
-
-    return MediaResponse(
-        id=media.id,
-        event_id=media.event_id,
-        user=UserSummary(id=media.user.id, name=media.user.name),
-        url=media.url,
-        thumb_url=media.thumb_url,
-        file_type=media.file_type,
-        file_size=media.file_size,
-        file_metadata=json.loads(media.file_metadata) if media.file_metadata else None,
-        created_at=media.created_at,
+        body=body,
+        data={"type": "new_media"},
     )
 
 
@@ -125,9 +124,14 @@ async def get_media_feed(
         MediaListItem(
             id=media.id,
             event_id=media.event_id,
+            user=UserSummary(id=media.user.id, name=media.user.name),
             url=media.url,
             thumb_url=media.thumb_url,
             file_type=media.file_type,
+            file_size=media.file_size,
+            file_metadata=json.loads(media.file_metadata)
+            if media.file_metadata
+            else None,
             created_at=media.created_at,
         )
         for media in media_list
@@ -138,29 +142,7 @@ async def get_media_feed(
     )
 
 
-@router.get("/{media_id}", response_model=MediaResponse)
-async def get_media_detail(db: DBContext, user: AuthContext, media_id: int):
-    """
-    Get media detail by ID
-    """
-    media = query.get_media_by_id(db, media_id)
-    if not media:
-        raise HTTPException(status_code=404, detail="Media not found")
-
-    return MediaResponse(
-        id=media.id,
-        event_id=media.event_id,
-        user=UserSummary(id=media.user.id, name=media.user.name),
-        url=media.url,
-        thumb_url=media.thumb_url,
-        file_type=media.file_type,
-        file_size=media.file_size,
-        file_metadata=json.loads(media.file_metadata) if media.file_metadata else None,
-        created_at=media.created_at,
-    )
-
-
-@router.delete("/{media_id}")
+@router.delete("/{media_id}", status_code=204)
 async def delete_media(db: DBContext, user: AuthContext, media_id: int):
     """
     Delete media (only uploader can delete)
@@ -175,4 +157,3 @@ async def delete_media(db: DBContext, user: AuthContext, media_id: int):
         )
 
     query.delete_media(db, media)
-    return {"message": "Media deleted successfully"}

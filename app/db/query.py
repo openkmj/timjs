@@ -51,7 +51,7 @@ def update_event(
     description: str | None = None,
     location: str | None = None,
     tags: list[str] | None = None,
-) -> Event:
+):
     """Update an event"""
     if title is not None:
         event.title = title
@@ -65,8 +65,6 @@ def update_event(
         event.tags = ",".join(tags) if tags else None
 
     db.commit()
-    db.refresh(event)
-    return event
 
 
 def delete_event(db: Session, event: Event) -> None:
@@ -88,32 +86,28 @@ def get_media_by_id(db: Session, media_id: int) -> Media | None:
     return db.query(Media).filter(Media.id == media_id).first()
 
 
-def create_media(
+def create_media_bulk(
     db: Session,
     user_id: int,
-    event_id: int,
-    url: str,
-    thumb_url: str,
-    file_type: str,
-    file_size: int,
-    created_at: datetime,
-    file_metadata: str | None = None,
-) -> Media:
-    """Create a new media record"""
-    media = Media(
-        event_id=event_id,
-        user_id=user_id,
-        url=url,
-        thumb_url=thumb_url,
-        file_type=file_type,
-        file_size=file_size,
-        file_metadata=file_metadata,
-        created_at=created_at,
-    )
-    db.add(media)
+    media_data_list: list[dict],
+) -> list[Media]:
+    """Create multiple media records in bulk"""
+    media_objects = [
+        Media(
+            event_id=data["event_id"],
+            user_id=user_id,
+            url=data["url"],
+            thumb_url=data["thumb_url"],
+            file_type=data["file_type"],
+            file_size=data["file_size"],
+            file_metadata=data.get("file_metadata"),
+            created_at=data["created_at"],
+        )
+        for data in media_data_list
+    ]
+
+    db.add_all(media_objects)
     db.commit()
-    db.refresh(media)
-    return media
 
 
 def delete_media(db: Session, media: Media) -> None:
@@ -126,10 +120,14 @@ def get_media_feed(
     db: Session, limit: int = 20, cursor: int | None = None
 ) -> tuple[list[Media], int | None, bool]:
     """
-    Get media feed with pagination (without user join)
+    Get media feed with pagination (with user join)
     Returns: (media_list, next_cursor, has_more)
     """
-    query_obj = db.query(Media).order_by(Media.created_at.desc(), Media.id.desc())
+    query_obj = (
+        db.query(Media)
+        .options(joinedload(Media.user))
+        .order_by(Media.created_at.desc(), Media.id.desc())
+    )
 
     if cursor:
         cursor_media = db.query(Media).filter(Media.id == cursor).first()
@@ -156,9 +154,9 @@ def get_media_feed(
 # User queries
 
 
-def get_user_by_id(db: Session, user_id: int) -> User | None:
-    """Get user by ID"""
-    return db.query(User).filter(User.id == user_id).first()
+def get_user_by_api_key(db: Session, api_key: str) -> User | None:
+    """Get user by API key"""
+    return db.query(User).filter(User.api_key == api_key).first()
 
 
 def list_users(db: Session) -> list[User]:
