@@ -24,21 +24,27 @@ router = APIRouter()
 
 
 @router.post("/presigned-url", response_model=PresignedUploadResponse)
-async def get_presigned_upload_url(user: AuthContext, request: PresignedUploadRequest):
+async def get_presigned_upload_url(
+    db: DBContext, user: AuthContext, request: PresignedUploadRequest
+):
     """
     Get presigned URLs for direct upload to S3 (original and thumbnail)
     """
+    event = query.get_event_by_id(db, request.event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
     original = s3_client.generate_presigned_post(
         file_name=request.file_name,
         content_type=request.content_type,
-        event_id=request.event_id,
+        event_s3_key=event.s3_key,
         media_type=MediaType.ORIGINAL,
     )
 
     thumbnail = s3_client.generate_presigned_post(
         file_name=request.file_name,
         content_type=request.content_type,
-        event_id=request.event_id,
+        event_s3_key=event.s3_key,
         media_type=MediaType.THUMBNAIL,
     )
 

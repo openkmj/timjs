@@ -31,19 +31,19 @@ class S3Client:
         self,
         file_name: str,
         content_type: str,
-        event_id: int,
+        event_s3_key: str,
         media_type: MediaType = MediaType.ORIGINAL,
         expiration: int = 3600,
     ) -> dict | None:
         """
         Generate a presigned POST URL for uploading a file directly to S3
         Files are uploaded with public-read ACL for direct access
-        Key format: media/event_id/unique_id.ext
+        Key format: media/event_s3_key/unique_id.ext
         """
 
         ext = os.path.splitext(file_name)[1]
         unique_id = generate(size=21)
-        key = f"{media_type.value}/{event_id}/{unique_id}{ext}"
+        key = f"{media_type.value}/{event_s3_key}/{unique_id}{ext}"
 
         try:
             response = self.s3_client.generate_presigned_post(
