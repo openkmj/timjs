@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.routers import events, media
+from app.routers import events, media, users
 
 app = FastAPI(
     title="Backend API",
@@ -10,6 +10,7 @@ app = FastAPI(
 
 app.include_router(events.router, prefix="/api/events", tags=["events"])
 app.include_router(media.router, prefix="/api/media", tags=["media"])
+app.include_router(users.router, prefix="/api/users", tags=["users"])
 
 
 @app.get("/")

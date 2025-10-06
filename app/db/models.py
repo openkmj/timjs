@@ -16,6 +16,7 @@ class User(Base):
     name = Column(String(100), nullable=False)
     api_key = Column(String(255), unique=True, nullable=False)
     expo_push_token = Column(String(255), nullable=True)
+    profile_img = Column(Text, nullable=True)
 
     media = relationship("Media", back_populates="user")
 
@@ -38,7 +39,7 @@ class Media(Base):
     __tablename__ = "media"
 
     id = Column(Integer, primary_key=True, index=True)
-    event_id = Column(Integer, ForeignKey("events.id"), nullable=True)
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     url = Column(Text, nullable=False)
     thumb_url = Column(Text, nullable=False)

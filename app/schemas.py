@@ -32,10 +32,30 @@ class EventResponse(EventBase):
 
 
 # Media schemas
+class UserSummary(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
+class MediaListItem(BaseModel):
+    id: int
+    event_id: int
+    url: str
+    thumb_url: str
+    file_type: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class MediaResponse(BaseModel):
     id: int
-    event_id: int | None
-    user_id: int
+    event_id: int
+    user: UserSummary
     url: str
     thumb_url: str
     file_type: str
@@ -48,7 +68,7 @@ class MediaResponse(BaseModel):
 
 
 class MediaFeedResponse(BaseModel):
-    items: list[MediaResponse]
+    items: list[MediaListItem]
     cursor: str | None = None
     has_more: bool
 
@@ -56,17 +76,38 @@ class MediaFeedResponse(BaseModel):
 class PresignedUploadRequest(BaseModel):
     file_name: str
     content_type: str
-    event_id: int | None = None
+    event_id: int
 
 
-class PresignedUploadResponse(BaseModel):
+class PresignedUrlData(BaseModel):
     url: str
     fields: dict
     key: str
 
 
+class PresignedUploadResponse(BaseModel):
+    original: PresignedUrlData
+    thumbnail: PresignedUrlData
+
+
 class ConfirmUploadRequest(BaseModel):
-    key: str
-    event_id: int | None = None
+    url: str
+    thumb_url: str
+    file_type: str
+    event_id: int
     file_size: int
     file_metadata: dict | None = None
+
+
+# User schemas
+class UserMeResponse(BaseModel):
+    id: int
+    name: str
+    profile_img: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class UpdatePushTokenRequest(BaseModel):
+    expo_push_token: str

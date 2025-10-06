@@ -30,17 +30,20 @@ class S3Client:
     def generate_presigned_post(
         self,
         file_name: str,
+        content_type: str,
+        event_id: int,
         media_type: MediaType = MediaType.ORIGINAL,
         expiration: int = 3600,
     ) -> dict | None:
         """
         Generate a presigned POST URL for uploading a file directly to S3
         Files are uploaded with public-read ACL for direct access
+        Key format: media/event_id/unique_id.ext
         """
 
         ext = os.path.splitext(file_name)[1]
         unique_id = generate(size=21)
-        key = f"{media_type.value}/{unique_id}{ext}"
+        key = f"{media_type.value}/{event_id}/{unique_id}{ext}"
 
         try:
             response = self.s3_client.generate_presigned_post(
@@ -48,9 +51,11 @@ class S3Client:
                 Key=key,
                 Fields={
                     "acl": "public-read",
+                    "Content-Type": content_type,
                 },
                 Conditions=[
                     {"acl": "public-read"},
+                    {"Content-Type": content_type},
                     ["content-length-range", 1, 2147483648],  # Max 2GB
                 ],
                 ExpiresIn=expiration,

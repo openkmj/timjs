@@ -1,0 +1,170 @@
+"""
+Database queries for events and media
+"""
+
+from datetime import datetime
+
+from sqlalchemy.orm import Session, joinedload
+
+from app.db.models import Event, Media, User
+
+
+def get_all_events(db: Session) -> list[Event]:
+    """Get all events"""
+    return db.query(Event).all()
+
+
+def get_event_by_id(db: Session, event_id: int) -> Event | None:
+    """Get event by ID"""
+    return db.query(Event).filter(Event.id == event_id).first()
+
+
+def create_event(
+    db: Session,
+    title: str,
+    date: datetime,
+    description: str | None = None,
+    location: str | None = None,
+    tags: list[str] | None = None,
+) -> Event:
+    """Create a new event"""
+    tags_str = ",".join(tags) if tags else None
+
+    event = Event(
+        title=title,
+        description=description,
+        date=date,
+        location=location,
+        tags=tags_str,
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+def update_event(
+    db: Session,
+    event: Event,
+    title: str | None = None,
+    date: datetime | None = None,
+    description: str | None = None,
+    location: str | None = None,
+    tags: list[str] | None = None,
+) -> Event:
+    """Update an event"""
+    if title is not None:
+        event.title = title
+    if date is not None:
+        event.date = date
+    if description is not None:
+        event.description = description
+    if location is not None:
+        event.location = location
+    if tags is not None:
+        event.tags = ",".join(tags) if tags else None
+
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+def delete_event(db: Session, event: Event) -> None:
+    """Delete an event (only if no media is connected)"""
+    db.delete(event)
+    db.commit()
+
+
+def has_media(db: Session, event_id: int) -> bool:
+    """Check if event has any media"""
+    return db.query(Media).filter(Media.event_id == event_id).count() > 0
+
+
+# Media queries
+
+
+def get_media_by_id(db: Session, media_id: int) -> Media | None:
+    """Get media by ID"""
+    return db.query(Media).filter(Media.id == media_id).first()
+
+
+def create_media(
+    db: Session,
+    user_id: int,
+    event_id: int,
+    url: str,
+    thumb_url: str,
+    file_type: str,
+    file_size: int,
+    created_at: datetime,
+    file_metadata: str | None = None,
+) -> Media:
+    """Create a new media record"""
+    media = Media(
+        event_id=event_id,
+        user_id=user_id,
+        url=url,
+        thumb_url=thumb_url,
+        file_type=file_type,
+        file_size=file_size,
+        file_metadata=file_metadata,
+        created_at=created_at,
+    )
+    db.add(media)
+    db.commit()
+    db.refresh(media)
+    return media
+
+
+def delete_media(db: Session, media: Media) -> None:
+    """Delete a media record"""
+    db.delete(media)
+    db.commit()
+
+
+def get_media_feed(
+    db: Session, limit: int = 20, cursor: int | None = None
+) -> tuple[list[Media], int | None, bool]:
+    """
+    Get media feed with pagination (without user join)
+    Returns: (media_list, next_cursor, has_more)
+    """
+    query_obj = db.query(Media).order_by(Media.created_at.desc(), Media.id.desc())
+
+    if cursor:
+        cursor_media = db.query(Media).filter(Media.id == cursor).first()
+        if cursor_media:
+            query_obj = query_obj.filter(
+                (Media.created_at < cursor_media.created_at)
+                | (
+                    (Media.created_at == cursor_media.created_at)
+                    & (Media.id < cursor_media.id)
+                )
+            )
+
+    media_list = query_obj.limit(limit + 1).all()
+
+    has_more = len(media_list) > limit
+    if has_more:
+        media_list = media_list[:limit]
+
+    next_cursor = media_list[-1].id if media_list and has_more else None
+
+    return media_list, next_cursor, has_more
+
+
+# User queries
+
+
+def get_user_by_id(db: Session, user_id: int) -> User | None:
+    """Get user by ID"""
+    return db.query(User).filter(User.id == user_id).first()
+
+
+def update_user_push_token(db: Session, user_id: int, expo_push_token: str) -> None:
+    """Update user's expo push token"""
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.expo_push_token = expo_push_token
+        db.commit()
