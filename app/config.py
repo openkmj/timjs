@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_url: str = "sqlite:///./data/timjs.db"
+    database_url: str = "sqlite:////data/timjs.db"
 
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""

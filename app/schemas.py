@@ -57,7 +57,7 @@ class MediaListItem(BaseModel):
 
 class MediaFeedResponse(BaseModel):
     items: list[MediaListItem]
-    cursor: str | None = None
+    cursor: int | None = None
     has_more: bool
 
 

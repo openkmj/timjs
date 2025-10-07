@@ -13,8 +13,10 @@ from app.middlewares.db import DBContext
 from app.schemas import (
     ConfirmUploadListRequest,
     MediaFeedResponse,
+    MediaListItem,
     PresignedUploadRequest,
     PresignedUploadResponse,
+    PresignedUrlData,
     UserSummary,
 )
 from app.utils.push_notification import send_push_notification
@@ -50,8 +52,6 @@ async def get_presigned_upload_url(
 
     if not original or not thumbnail:
         raise HTTPException(status_code=500, detail="Failed to generate presigned URL")
-
-    from app.schemas import PresignedUrlData
 
     return PresignedUploadResponse(
         original=PresignedUrlData(
@@ -108,17 +108,13 @@ async def create_media(
 
 
 @router.get("", response_model=MediaFeedResponse)
-async def get_media_feed(
-    db: DBContext, user: AuthContext, cursor: int | None = None, limit: int = 20
-):
+async def get_media_feed(db: DBContext, user: AuthContext, cursor: int | None = None):
     """
     Get media feed with pagination
     """
     media_list, next_cursor, has_more = query.get_media_feed(
-        db, limit=limit, cursor=cursor
+        db, limit=50, cursor=cursor
     )
-
-    from app.schemas import MediaListItem
 
     items = [
         MediaListItem(
@@ -137,9 +133,7 @@ async def get_media_feed(
         for media in media_list
     ]
 
-    return MediaFeedResponse(
-        items=items, cursor=str(next_cursor) if next_cursor else None, has_more=has_more
-    )
+    return MediaFeedResponse(items=items, cursor=next_cursor, has_more=has_more)
 
 
 @router.delete("/{media_id}", status_code=204)
