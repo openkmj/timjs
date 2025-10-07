@@ -92,10 +92,20 @@ class ConfirmUploadListRequest(BaseModel):
 
 
 # User schemas
+class FriendSummary(BaseModel):
+    id: int
+    name: str
+    profile_img: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
 class UserMeResponse(BaseModel):
     id: int
     name: str
     profile_img: str | None = None
+    friends: list[FriendSummary] = []
 
     class Config:
         from_attributes = True
