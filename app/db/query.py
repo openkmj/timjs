@@ -171,3 +171,12 @@ def update_user_push_token(db: Session, user_id: int, expo_push_token: str) -> N
     if user:
         user.expo_push_token = expo_push_token
         db.commit()
+
+
+def update_user_profile_image(db: Session, user_id: int, profile_img: str) -> None:
+    """Update user's profile image"""
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.profile_img = profile_img
+        db.commit()

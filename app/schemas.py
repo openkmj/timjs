@@ -113,3 +113,12 @@ class UserMeResponse(BaseModel):
 
 class UpdatePushTokenRequest(BaseModel):
     expo_push_token: str
+
+
+class ProfileImagePresignedRequest(BaseModel):
+    file_name: str
+    content_type: str
+
+
+class UpdateProfileImageRequest(BaseModel):
+    url: str

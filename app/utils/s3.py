@@ -16,6 +16,7 @@ settings = get_settings()
 class MediaType(str, Enum):
     ORIGINAL = "media"
     THUMBNAIL = "media/thumb"
+    PROFILE = "profile"
 
 
 class S3Client:
