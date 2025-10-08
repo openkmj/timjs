@@ -116,22 +116,29 @@ async def get_media_feed(db: DBContext, user: AuthContext, cursor: int | None = 
         db, limit=50, cursor=cursor
     )
 
-    items = [
-        MediaListItem(
-            id=media.id,
-            event_id=media.event_id,
-            user=UserSummary(id=media.user.id, name=media.user.name),
-            url=media.url,
-            thumb_url=media.thumb_url,
-            file_type=media.file_type,
-            file_size=media.file_size,
-            file_metadata=json.loads(media.file_metadata)
-            if media.file_metadata
-            else None,
-            created_at=media.created_at,
+    items = []
+    for media in media_list:
+        # Parse file_metadata safely
+        metadata = None
+        if media.file_metadata:
+            try:
+                metadata = json.loads(media.file_metadata)
+            except (json.JSONDecodeError, TypeError):
+                metadata = None
+
+        items.append(
+            MediaListItem(
+                id=media.id,
+                event_id=media.event_id,
+                user=UserSummary(id=media.user.id, name=media.user.name),
+                url=media.url,
+                thumb_url=media.thumb_url,
+                file_type=media.file_type,
+                file_size=media.file_size,
+                file_metadata=metadata,
+                created_at=media.created_at,
+            )
         )
-        for media in media_list
-    ]
 
     return MediaFeedResponse(items=items, cursor=next_cursor, has_more=has_more)
 
