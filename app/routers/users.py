@@ -22,22 +22,23 @@ router = APIRouter()
 
 @router.get("/me", response_model=UserMeResponse)
 async def get_me(db: DBContext, user: AuthContext):
-    """
-    Get current user's profile with friends list
-    """
-    # Get all users except current user
-    all_users = query.list_users(db)
+    team_users = query.list_users(db, team_id=user.team_id)
     friends = [
         FriendSummary(id=u.id, name=u.name, profile_img=u.profile_img)
-        for u in all_users
+        for u in team_users
         if u.id != user.id
     ]
+
+    team = query.get_team_by_id(db, user.team_id)
 
     return UserMeResponse(
         id=user.id,
         name=user.name,
         profile_img=user.profile_img,
         friends=friends,
+        team_name=team.name,
+        storage_used=team.storage_used,
+        storage_limit=team.storage_limit,
     )
 
 

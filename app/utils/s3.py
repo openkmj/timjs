@@ -69,6 +69,18 @@ class S3Client:
         except Exception:
             return None
 
+    def get_file_metadata(self, key: str) -> dict | None:
+        try:
+            response = self.s3_client.head_object(
+                Bucket=settings.s3_bucket_name, Key=key
+            )
+            return {
+                "size": response["ContentLength"],
+                "content_type": response["ContentType"],
+            }
+        except Exception:
+            return None
+
     def delete_file(self, key: str) -> bool:
         try:
             self.s3_client.delete_object(Bucket=settings.s3_bucket_name, Key=key)

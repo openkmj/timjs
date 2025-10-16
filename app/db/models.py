@@ -9,6 +9,18 @@ from sqlalchemy.orm import declarative_base, relationship
 Base = declarative_base()
 
 
+class Team(Base):
+    __tablename__ = "teams"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(200), nullable=False)
+    storage_limit = Column(Integer, default=1048576)
+    storage_used = Column(Integer, default=0)
+
+    users = relationship("User", back_populates="team")
+    events = relationship("Event", back_populates="team")
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -17,8 +29,10 @@ class User(Base):
     api_key = Column(String(255), unique=True, nullable=False)
     expo_push_token = Column(String(255), nullable=True)
     profile_img = Column(Text, nullable=True)
+    team_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
 
     media = relationship("Media", back_populates="user")
+    team = relationship("Team", back_populates="users")
 
 
 class Event(Base):
@@ -31,8 +45,10 @@ class Event(Base):
     date = Column(DateTime, nullable=False)
     location = Column(String(255), nullable=True)
     tags = Column(Text, nullable=True)  # sepreated by ","
+    team_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
 
     media = relationship("Media", back_populates="event")
+    team = relationship("Team", back_populates="events")
 
 
 class Media(Base):

@@ -10,11 +10,8 @@ router = APIRouter()
 
 
 @router.get("", response_model=list[EventResponse])
-async def get_events(db: DBContext, _: AuthContext):
-    """
-    Get all events
-    """
-    events = query.get_all_events(db)
+async def get_events(db: DBContext, user: AuthContext):
+    events = query.list_events(db, user.team_id)
     return [
         EventResponse(
             id=e.id,
@@ -33,34 +30,35 @@ async def create_event(db: DBContext, user: AuthContext, event: EventCreate):
     """
     Create a new event
     """
-    new_event = query.create_event(
+    query.create_event(
         db=db,
         title=event.title,
         date=event.date,
+        team_id=user.team_id,
         description=event.description,
         location=event.location,
         tags=event.tags,
     )
 
-    # Send push notifications to all users except the creator
-    users = query.list_users(db)
+    # Send push notifications to team members except the creator
+    users = query.list_users(db, user.team_id)
     tokens = [u.expo_push_token for u in users if u.expo_push_token and u.id != user.id]
     send_push_notification(
         tokens=tokens,
-        title=new_event.title,
-        body=f"{user.name}님이 {new_event.title} 이벤트를 추가했습니다.",
+        title=event.title,
+        body=f"{user.name}님이 {event.title} 이벤트를 추가했습니다.",
         data={"type": "new_event"},
     )
 
 
 @router.put("/{event_id}", status_code=204)
 async def update_event(
-    db: DBContext, _: AuthContext, event_id: int, event_update: EventUpdate
+    db: DBContext, user: AuthContext, event_id: int, event_update: EventUpdate
 ):
     """
     Update Event
     """
-    event = query.get_event_by_id(db, event_id)
+    event = query.get_event(db, event_id, user.team_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
@@ -80,7 +78,7 @@ async def delete_event(db: DBContext, user: AuthContext, event_id: int):
     """
     Delete an event (연결된 media가 없는 event만 삭제 가능)
     """
-    event = query.get_event_by_id(db, event_id)
+    event = query.get_event(db, event_id, user.team_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 

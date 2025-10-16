@@ -79,11 +79,9 @@ class PresignedUploadResponse(BaseModel):
 
 
 class MediaUploadItem(BaseModel):
-    url: str
-    thumb_url: str
-    file_type: str
+    s3_key: str
+    thumb_s3_key: str
     event_id: int
-    file_size: int
     file_metadata: dict | None = None
 
 
@@ -106,6 +104,9 @@ class UserMeResponse(BaseModel):
     name: str
     profile_img: str | None = None
     friends: list[FriendSummary] = []
+    team_name: str
+    storage_used: int
+    storage_limit: int
 
     class Config:
         from_attributes = True

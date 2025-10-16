@@ -2,31 +2,38 @@
 Database queries for events and media
 """
 
+import math
 from datetime import datetime
 
 from sqlalchemy.orm import Session, joinedload
 
-from app.db.models import Event, Media, User
+from app.db.models import Event, Media, Team, User
 
 
-def get_all_events(db: Session) -> list[Event]:
-    """Get all events"""
-    return db.query(Event).all()
+def list_events(db: Session, team_id: int) -> list[Event]:
+    return (
+        db.query(Event)
+        .filter(Event.team_id == team_id)
+        .order_by(Event.date.desc())
+        .all()
+    )
 
 
-def get_event_by_id(db: Session, event_id: int) -> Event | None:
-    """Get event by ID"""
-    return db.query(Event).filter(Event.id == event_id).first()
+def get_event(db: Session, event_id: int, team_id: int) -> Event | None:
+    return (
+        db.query(Event).filter(Event.id == event_id, Event.team_id == team_id).first()
+    )
 
 
 def create_event(
     db: Session,
     title: str,
     date: datetime,
+    team_id: int,
     description: str | None = None,
     location: str | None = None,
     tags: list[str] | None = None,
-) -> Event:
+):
     """Create a new event"""
     tags_str = ",".join(tags) if tags else None
 
@@ -36,11 +43,10 @@ def create_event(
         date=date,
         location=location,
         tags=tags_str,
+        team_id=team_id,
     )
     db.add(event)
     db.commit()
-    db.refresh(event)
-    return event
 
 
 def update_event(
@@ -90,8 +96,8 @@ def create_media_bulk(
     db: Session,
     user_id: int,
     media_data_list: list[dict],
+    team_id: int,
 ) -> list[Media]:
-    """Create multiple media records in bulk"""
     media_objects = [
         Media(
             event_id=data["event_id"],
@@ -107,17 +113,33 @@ def create_media_bulk(
     ]
 
     db.add_all(media_objects)
+
+    # Calculate total size in KB from media_data_list
+    total_bytes = sum(data["file_size"] for data in media_data_list)
+    size_kb = math.ceil(total_bytes / 1024)
+
+    team = db.query(Team).filter(Team.id == team_id).first()
+    team.storage_used += size_kb
+
     db.commit()
 
 
-def delete_media(db: Session, media: Media) -> None:
-    """Delete a media record"""
+def delete_media(db: Session, media: Media, team_id: int) -> None:
+    # Calculate size in KB before deleting
+    size_kb = math.ceil(media.file_size / 1024) if media.file_size else 0
+
     db.delete(media)
+
+    team = db.query(Team).filter(Team.id == team_id).first()
+    team.storage_used -= size_kb
+    if team.storage_used < 0:
+        team.storage_used = 0
+
     db.commit()
 
 
 def get_media_feed(
-    db: Session, limit: int = 20, cursor: int | None = None
+    db: Session, limit: int = 20, cursor: int | None = None, team_id: int | None = None
 ) -> tuple[list[Media], int | None, bool]:
     """
     Get media feed with pagination (with user join)
@@ -125,9 +147,14 @@ def get_media_feed(
     """
     query_obj = (
         db.query(Media)
+        .join(Media.event)
         .options(joinedload(Media.user))
         .order_by(Media.created_at.desc(), Media.id.desc())
     )
+
+    # Filter by team
+    if team_id is not None:
+        query_obj = query_obj.filter(Event.team_id == team_id)
 
     if cursor:
         cursor_media = db.query(Media).filter(Media.id == cursor).first()
@@ -155,13 +182,11 @@ def get_media_feed(
 
 
 def get_user_by_api_key(db: Session, api_key: str) -> User | None:
-    """Get user by API key"""
     return db.query(User).filter(User.api_key == api_key).first()
 
 
-def list_users(db: Session) -> list[User]:
-    """Get all users"""
-    return db.query(User).all()
+def list_users(db: Session, team_id: int) -> list[User]:
+    return db.query(User).filter(User.team_id == team_id).all()
 
 
 def update_user_push_token(db: Session, user_id: int, expo_push_token: str) -> None:
@@ -180,3 +205,15 @@ def update_user_profile_image(db: Session, user_id: int, profile_img: str) -> No
     if user:
         user.profile_img = profile_img
         db.commit()
+
+
+# Team queries
+
+
+def get_team_by_id(db: Session, team_id: int) -> Team | None:
+    return db.query(Team).filter(Team.id == team_id).first()
+
+
+def get_team_storage_usage(db: Session, team_id: int) -> tuple[int, int]:
+    team = db.query(Team).filter(Team.id == team_id).first()
+    return (team.storage_used, team.storage_limit)
