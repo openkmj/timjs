@@ -17,7 +17,7 @@ async def _get_current_user(credentials: Credentials, db: DBContext) -> User:
     if not token:
         raise HTTPException(status_code=401, detail="API key is required")
 
-    user = query.get_user_by_api_key(db, token)
+    user = query.get_user(db, api_key=token)
 
     if not user:
         raise HTTPException(status_code=401, detail="Invalid API key")

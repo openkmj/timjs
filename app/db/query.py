@@ -87,7 +87,7 @@ def has_media(db: Session, event_id: int) -> bool:
 # Media queries
 
 
-def get_media_by_id(db: Session, media_id: int) -> Media | None:
+def get_media(db: Session, media_id: int) -> Media | None:
     """Get media by ID"""
     return db.query(Media).filter(Media.id == media_id).first()
 
@@ -181,39 +181,38 @@ def get_media_feed(
 # User queries
 
 
-def get_user_by_api_key(db: Session, api_key: str) -> User | None:
-    return db.query(User).filter(User.api_key == api_key).first()
+def get_user(
+    db: Session, api_key: str | None = None, user_id: int | None = None
+) -> User | None:
+    if api_key:
+        return db.query(User).filter(User.api_key == api_key).first()
+    if user_id:
+        return db.query(User).filter(User.id == user_id).first()
+
+    raise ValueError("Either api_key or user_id must be provided")
 
 
 def list_users(db: Session, team_id: int) -> list[User]:
     return db.query(User).filter(User.team_id == team_id).all()
 
 
-def update_user_push_token(db: Session, user_id: int, expo_push_token: str) -> None:
-    """Update user's expo push token"""
-
+def update_user(
+    db: Session,
+    user_id: int,
+    expo_push_token: str | None = None,
+    profile_img: str | None = None,
+) -> None:
     user = db.query(User).filter(User.id == user_id).first()
-    if user:
+
+    if expo_push_token:
         user.expo_push_token = expo_push_token
-        db.commit()
-
-
-def update_user_profile_image(db: Session, user_id: int, profile_img: str) -> None:
-    """Update user's profile image"""
-
-    user = db.query(User).filter(User.id == user_id).first()
-    if user:
+    if profile_img:
         user.profile_img = profile_img
-        db.commit()
+    db.commit()
 
 
 # Team queries
 
 
-def get_team_by_id(db: Session, team_id: int) -> Team | None:
+def get_team(db: Session, team_id: int) -> Team:
     return db.query(Team).filter(Team.id == team_id).first()
-
-
-def get_team_storage_usage(db: Session, team_id: int) -> tuple[int, int]:
-    team = db.query(Team).filter(Team.id == team_id).first()
-    return (team.storage_used, team.storage_limit)

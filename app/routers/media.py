@@ -38,8 +38,8 @@ async def get_presigned_upload_url(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    storage_used, storage_limit = query.get_team_storage_usage(db, user.team_id)
-    if storage_used >= storage_limit:
+    team = query.get_team(db, user.team_id)
+    if team.storage_used >= team.storage_limit:
         raise HTTPException(
             status_code=403,
             detail="Storage limit exceeded.",
@@ -81,7 +81,8 @@ async def create_media(
     Fetches actual file metadata from S3 for validation
     """
     # Get current storage usage first
-    storage_used, storage_limit = query.get_team_storage_usage(db, user.team_id)
+    team = query.get_team(db, user.team_id)
+    storage_used, storage_limit = team.storage_used, team.storage_limit
 
     # Verify files, check storage, and build data list in one pass
     total_upload_size = 0
@@ -185,7 +186,7 @@ async def delete_media(db: DBContext, user: AuthContext, media_id: int):
     """
     Delete media (only uploader can delete)
     """
-    media = query.get_media_by_id(db, media_id)
+    media = query.get_media(db, media_id)
     if not media:
         raise HTTPException(status_code=404, detail="Media not found")
 

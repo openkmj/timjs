@@ -29,7 +29,7 @@ async def get_me(db: DBContext, user: AuthContext):
         if u.id != user.id
     ]
 
-    team = query.get_team_by_id(db, user.team_id)
+    team = query.get_team(db, user.team_id)
 
     return UserMeResponse(
         id=user.id,
@@ -49,7 +49,7 @@ async def update_push_token(
     """
     Update user's expo push token
     """
-    query.update_user_push_token(db, user.id, request.expo_push_token)
+    query.update_user(db, user.id, expo_push_token=request.expo_push_token)
 
 
 @router.post("/profile-image/presigned-url", response_model=PresignedUrlData)
@@ -83,4 +83,4 @@ async def update_profile_image(
     """
     Update user's profile image
     """
-    query.update_user_profile_image(db, user.id, request.url)
+    query.update_user(db, user.id, profile_img=request.url)
