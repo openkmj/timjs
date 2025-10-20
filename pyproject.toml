@@ -1,5 +1,5 @@
 [project]
-name = "backend"
+name = "timjs"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -8,10 +8,12 @@ dependencies = [
     "boto3>=1.40.45",
     "exponent-server-sdk>=2.2.0",
     "fastapi>=0.118.0",
+    "itsdangerous>=2.2.0",
     "nanoid>=2.0.0",
     "pydantic-settings>=2.11.0",
     "python-multipart>=0.0.20",
     "ruff>=0.13.3",
+    "sqladmin>=0.21.0",
     "sqlalchemy>=2.0.43",
     "uvicorn>=0.37.0",
 ]

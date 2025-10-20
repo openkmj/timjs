@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     aws_region: str = "ap-northeast-2"
     s3_bucket_name: str = ""
 
+    admin_username: str = "admin"
+    admin_password: str = ""
+    admin_secret_key: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = False
