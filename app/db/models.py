@@ -20,6 +20,9 @@ class Team(Base):
     users = relationship("User", back_populates="team")
     events = relationship("Event", back_populates="team")
 
+    def __str__(self):
+        return f"<Team id={self.id} name={self.name}>"
+
 
 class User(Base):
     __tablename__ = "users"
@@ -33,6 +36,9 @@ class User(Base):
 
     media = relationship("Media", back_populates="user")
     team = relationship("Team", back_populates="users")
+
+    def __str__(self):
+        return f"<User id={self.id} name={self.name}>"
 
 
 class Event(Base):
@@ -50,6 +56,9 @@ class Event(Base):
     media = relationship("Media", back_populates="event")
     team = relationship("Team", back_populates="events")
 
+    def __str__(self):
+        return f"<Event id={self.id} title={self.title}>"
+
 
 class Media(Base):
     __tablename__ = "media"
@@ -66,3 +75,6 @@ class Media(Base):
 
     event = relationship("Event", back_populates="media")
     user = relationship("User", back_populates="media")
+
+    def __str__(self):
+        return f"<Media id={self.id}>"
