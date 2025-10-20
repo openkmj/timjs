@@ -8,7 +8,6 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 
-from app.config import get_settings
 from app.db import query
 from app.middlewares.auth import AuthContext
 from app.middlewares.db import DBContext
@@ -21,6 +20,7 @@ from app.schemas import (
     PresignedUrlData,
     UserSummary,
 )
+from app.utils.config import get_settings
 from app.utils.push_notification import send_push_notification
 from app.utils.s3 import MediaType, s3_client
 

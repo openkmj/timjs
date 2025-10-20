@@ -3,9 +3,9 @@ from sqladmin import Admin
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.admin import AdminAuth, EventAdmin, MediaAdmin, TeamAdmin, UserAdmin
-from app.config import get_settings
 from app.db.connection import engine
 from app.routers import events, media, users
+from app.utils.config import get_settings
 
 app = FastAPI(
     title="Timjs Backend API",

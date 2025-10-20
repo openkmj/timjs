@@ -8,7 +8,7 @@ from enum import Enum
 import boto3
 from nanoid import generate
 
-from app.config import get_settings
+from app.utils.config import get_settings
 
 settings = get_settings()
 

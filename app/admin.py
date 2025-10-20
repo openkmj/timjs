@@ -2,8 +2,8 @@ from sqladmin import ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 
-from app.config import get_settings
 from app.db.models import Event, Media, Team, User
+from app.utils.config import get_settings
 
 
 class AdminAuth(AuthenticationBackend):

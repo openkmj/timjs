@@ -4,8 +4,8 @@ Database initialization script
 
 from sqlalchemy import create_engine
 
-from app.config import get_settings
 from app.db.models import Base
+from app.utils.config import get_settings
 
 settings = get_settings()
 
