@@ -20,6 +20,7 @@ async def get_events(db: DBContext, user: AuthContext):
             date=e.date,
             location=e.location,
             tags=e.tags.split(",") if e.tags else [],
+            thumbnails=getattr(e, "thumbnails", []),
         )
         for e in events
     ]

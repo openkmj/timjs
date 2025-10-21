@@ -5,18 +5,63 @@ Database queries for events and media
 import math
 from datetime import datetime
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.db.models import Event, Media, Team, User
 
 
 def list_events(db: Session, team_id: int) -> list[Event]:
-    return (
+    events = (
         db.query(Event)
         .filter(Event.team_id == team_id)
         .order_by(Event.date.desc())
         .all()
     )
+
+    # Preload thumbnails for all events (max 3 per event)
+    if events:
+        event_ids = [e.id for e in events]
+        # Get up to 3 media items per event, ordered by creation date
+
+        # Subquery to get row numbers for each event's media
+        subq = (
+            select(
+                Media.id,
+                Media.event_id,
+                Media.thumb_url,
+                func.row_number()
+                .over(
+                    partition_by=Media.event_id,
+                    order_by=Media.created_at.desc()
+                )
+                .label("rn")
+            )
+            .where(Media.event_id.in_(event_ids))
+        ).subquery()
+
+        # Get only the first 3 media items per event
+        thumbnails = (
+            db.query(
+                subq.c.event_id,
+                subq.c.thumb_url
+            )
+            .filter(subq.c.rn <= 3)
+            .all()
+        )
+
+        # Group thumbnails by event_id
+        thumbnails_by_event = {}
+        for event_id, thumb_url in thumbnails:
+            if event_id not in thumbnails_by_event:
+                thumbnails_by_event[event_id] = []
+            thumbnails_by_event[event_id].append(thumb_url)
+
+        # Attach thumbnails to events
+        for event in events:
+            event.thumbnails = thumbnails_by_event.get(event.id, [])
+
+    return events
 
 
 def get_event(db: Session, event_id: int, team_id: int) -> Event | None:

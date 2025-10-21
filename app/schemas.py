@@ -26,6 +26,7 @@ class EventUpdate(BaseModel):
 
 class EventResponse(EventBase):
     id: int
+    thumbnails: list[str] = []
 
     class Config:
         from_attributes = True
