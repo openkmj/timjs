@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 # Event schemas
@@ -25,23 +25,23 @@ class EventUpdate(BaseModel):
 
 
 class EventResponse(EventBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     thumbnails: list[str] = []
-
-    class Config:
-        from_attributes = True
 
 
 # Media schemas
 class UserSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
 
-    class Config:
-        from_attributes = True
-
 
 class MediaListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     event_id: int
     user: UserSummary
@@ -51,9 +51,6 @@ class MediaListItem(BaseModel):
     file_size: int | None
     file_metadata: dict | None = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class MediaFeedResponse(BaseModel):
@@ -92,15 +89,16 @@ class ConfirmUploadListRequest(BaseModel):
 
 # User schemas
 class FriendSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     profile_img: str | None = None
 
-    class Config:
-        from_attributes = True
-
 
 class UserMeResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     profile_img: str | None = None
@@ -108,9 +106,6 @@ class UserMeResponse(BaseModel):
     team_name: str
     storage_used: int
     storage_limit: int
-
-    class Config:
-        from_attributes = True
 
 
 class UpdatePushTokenRequest(BaseModel):

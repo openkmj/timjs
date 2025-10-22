@@ -31,23 +31,14 @@ def list_events(db: Session, team_id: int) -> list[Event]:
                 Media.event_id,
                 Media.thumb_url,
                 func.row_number()
-                .over(
-                    partition_by=Media.event_id,
-                    order_by=Media.created_at.desc()
-                )
-                .label("rn")
-            )
-            .where(Media.event_id.in_(event_ids))
+                .over(partition_by=Media.event_id, order_by=Media.created_at.desc())
+                .label("rn"),
+            ).where(Media.event_id.in_(event_ids))
         ).subquery()
 
         # Get only the first 3 media items per event
         thumbnails = (
-            db.query(
-                subq.c.event_id,
-                subq.c.thumb_url
-            )
-            .filter(subq.c.rn <= 3)
-            .all()
+            db.query(subq.c.event_id, subq.c.thumb_url).filter(subq.c.rn <= 3).all()
         )
 
         # Group thumbnails by event_id

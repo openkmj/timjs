@@ -22,6 +22,12 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --forwarded-allo
 uv run ruff check --fix .
 ```
 
+### Test
+
+```
+uv run pytest -q
+```
+
 ### Initialize DB
 
 ```bash

@@ -1,9 +1,12 @@
 from functools import lru_cache
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    model_config = ConfigDict(env_file=".env", case_sensitive=False)
+
     database_url: str = "sqlite:////data/timjs.db"
 
     aws_access_key_id: str = ""
@@ -14,10 +17,6 @@ class Settings(BaseSettings):
     admin_username: str = "admin"
     admin_password: str = ""
     admin_secret_key: str = ""
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
 
 
 @lru_cache
