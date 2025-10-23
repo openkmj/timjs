@@ -2,9 +2,9 @@ name: timjs CI
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ main, feat/pytest ]
   push:
-    branches: [ main ]
+    branches: [ main, feat/pytest ]
   
 permissions:
   contents: read
